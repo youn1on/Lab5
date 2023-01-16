@@ -2,11 +2,14 @@
 
 public class EliteAnt : Ant
 {
-    public EliteAnt(int graphSize) : base(graphSize) { }
+    public EliteAnt(int graphSize) : base(graphSize)
+    {
+        _possibleNumerators = new double[graphSize];
+    }
     
     public override void UpdateT(double[][] T, int bestL)
     {
-        Parallel.For(1, Path.Count, i =>
+        Parallel.For(1, Path.Length, i =>
         {
             double value = (double)bestL / Lk * 2;
             T[Path[i - 1]][Path[i]] += value;
@@ -24,30 +27,36 @@ public class EliteAnt : Ant
     
     protected override int ChooseNext(int[] D, double[] T)
     {
-        List<KeyValuePair<int, double>> _possible = new List<KeyValuePair<int, double>>();
         double denominator = 0;
-        for (int i = 0; i < D.Length; i++)
+        int possibleLength = _possibleNumerators.Length - pathLength;
+        for (int i = 0; i < possibleLength; i++)
         {
-            if (!_visited[i])
+            double numerator = Math.Pow(T[_possibleMoves[i]], a) * Math.Pow(1.0 / D[_possibleMoves[i]], b);
+            if (numerator < Math.Pow(10, -15)) numerator = Math.Pow(10, -15);
+            _possibleNumerators[i] = numerator;
+            denominator += numerator;
+        }
+        for (int i = 0; i < possibleLength; i++)
+        {
+            _possibleNumerators[i] /= denominator;
+        }
+        double choice = Random.Shared.NextDouble();
+        int chosenIndex = possibleLength-1;
+        for (int i = 0; i < possibleLength; i++)
+        {
+            if (choice < _possibleNumerators[i])
             {
-                double numerator = Math.Pow(T[i], a) * Math.Pow(1.0 / D[i], b);
-                if (numerator < Math.Pow(10, -15)) numerator = Math.Pow(10, -15);
-                _possible.Add(new KeyValuePair<int, double>(i, numerator));
-                denominator += numerator;
+                chosenIndex = i;
+                break;
             }
+            choice -= _possibleNumerators[i];
         }
-        List<KeyValuePair<int, double>> possible = new List<KeyValuePair<int, double>>();
-        for (int i = 0; i < _possible.Count; i++)
-        {
-            possible.Add(new KeyValuePair<int, double>(_possible[i].Key, _possible[i].Value/denominator));
-        }
-        double choise = _rand.NextDouble();
-        foreach (var vertice in possible)
-        {
-            if (choise < vertice.Value) return vertice.Key;
-            choise -= vertice.Value;
-        }
-        return -1;
+
+        int chosenVertice = _possibleMoves[chosenIndex];
+        RemoveFromPossibles(chosenIndex);
+        return chosenVertice;
     }
+    
+    private double[] _possibleNumerators;
 
 }

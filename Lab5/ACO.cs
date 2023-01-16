@@ -2,15 +2,14 @@
 {
     public class ACO
     {
-        private static double p = 0.2;
+        private static double p = 0.5;
         private static readonly int M = 50;
         private static int _graphSize;
-        private static readonly Random Rand = new();
-        private static readonly int c = 6, w = 2, e = 2;
+        private static readonly int c = 8, w = 8, e = 2;
         public int Lmin;
         public double[][] T;
         private int[][] D;
-        private List<int> _bestPath;
+        private int[] _bestPath;
         private int _bestL;
         private List<Ant> _ants;
 
@@ -20,7 +19,7 @@
             Lmin = Greedy(D);
             this.D = MatrixFactory.Copy(D);
             this.T = MatrixFactory.Copy(T);
-            _bestPath = new List<int>();
+            _bestPath = new int[D.Length+1];
             _bestL = Int32.MaxValue;
             _ants = new List<Ant>();
             for (int i = 0; i < M*c/(c+e+w); i++)
@@ -41,10 +40,10 @@
         {
             for (int ictr = 0; ictr < numberOfIterations; ictr++)
             {
-                Parallel.For(0, M, i =>
+                Parallel.For(0, _ants.Count, i =>
                 {
                     _ants[i].Reset();
-                    int p = Rand.Next(D.Length);
+                    int p = Random.Shared.Next(D.Length);
                     _ants[i].Run(D, T, p);
                 });
                 UpdateT(_ants);
@@ -55,11 +54,12 @@
 
         private void UseVaporization()
         {
-            Parallel.ForEach(T, t =>
+            double coef = 1 - p;
+            Parallel.For(0, T.Length, i =>
             {
-                Parallel.For(0, t.Length, j =>
+                Parallel.For(0, T[i].Length, j =>
                 {
-                    t[j] *= 1 - p;
+                    T[i][j] *= coef;
                 });
             });
         }
@@ -87,7 +87,7 @@
         public void GetResult()
         {
             string path = $"[{_bestPath[0]}";
-            for(int i = 1; i<_bestPath.Count; i++)
+            for(int i = 1; i<_bestPath.Length; i++)
             {
                 path += $" ==> {_bestPath[i]}";
             }
