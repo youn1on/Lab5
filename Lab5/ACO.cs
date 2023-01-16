@@ -6,6 +6,7 @@
         private static readonly int M = 50;
         private static int _graphSize;
         private static readonly Random Rand = new();
+        private static readonly int c = 6, w = 2, e = 2;
         public int Lmin;
         public double[][] T;
         private int[][] D;
@@ -22,9 +23,17 @@
             _bestPath = new List<int>();
             _bestL = Int32.MaxValue;
             _ants = new List<Ant>();
-            for (int i = 0; i < M; i++)
+            for (int i = 0; i < M*c/(c+e+w); i++)
             {
-                _ants.Add(new Ant(D.Length));
+                _ants.Add(new ClassicAnt(D.Length));
+            }
+            for (int i = 0; i < M*w/(c+e+w); i++)
+            {
+                _ants.Add(new WildAnt(D.Length));
+            }
+            for (int i = 0; i < M*e/(c+e+w); i++)
+            {
+                _ants.Add(new EliteAnt(D.Length));
             }
         }
 
@@ -38,12 +47,6 @@
                     int p = Rand.Next(D.Length);
                     _ants[i].Run(D, T, p);
                 });
-                // for (int i = 0; i < M; i++)
-                // {
-                //     _ants[i].Reset();
-                //     int p = Rand.Next(D.Length);
-                //     _ants[i].Run(D, T, p);
-                // }
                 UpdateT(_ants);
                 Console.WriteLine("\r"+ictr+" : "+_bestL);
             }
