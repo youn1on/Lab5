@@ -38,13 +38,19 @@
                     int p = Rand.Next(D.Length);
                     _ants[i].Run(D, T, p);
                 });
+                // for (int i = 0; i < M; i++)
+                // {
+                //     _ants[i].Reset();
+                //     int p = Rand.Next(D.Length);
+                //     _ants[i].Run(D, T, p);
+                // }
                 UpdateT(_ants);
                 Console.WriteLine("\r"+ictr+" : "+_bestL);
             }
             GetResult();
         }
 
-        private void UpdateT(List<Ant> ants)
+        private void UseVaporization()
         {
             Parallel.ForEach(T, t =>
             {
@@ -53,30 +59,25 @@
                     t[j] *= 1 - p;
                 });
             });
+        }
 
+        private void UpdateBestL(List<Ant> ants)
+        {
             Ant best = ants.MinBy(a => a.Lk)!;
             if (best.Lk < _bestL)
             {
                 _bestL = best.Lk;
                 _bestPath = best.Path;
             }
+        }
 
+        private void UpdateT(List<Ant> ants)
+        {
+            UseVaporization();
+            UpdateBestL(ants);
             Parallel.ForEach(ants, ant =>
             {
-                Parallel.For(1, ant.Path.Count, i =>
-                {
-                    double value = (double)Lmin / ant.Lk;
-                    T[ant.Path[i - 1]][ant.Path[i]] += value;
-                    double newCurrentValue = T[ant.Path[i - 1]][ant.Path[i]];
-                    while (true)
-                    {
-                        double currentValue = newCurrentValue;
-                        double newValue = currentValue + value;
-                        newCurrentValue = Interlocked.CompareExchange(ref T[ant.Path[i - 1]][ant.Path[i]], newValue, currentValue);
-                        if (newCurrentValue.Equals(currentValue))
-                            break;
-                    }
-                });
+                ant.UpdateT(T, _bestL);
             });
         }
 
